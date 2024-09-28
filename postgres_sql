@@ -1,0 +1,31 @@
+select
+	information_schema.columns.table_name as table_name,
+    information_schema.columns.column_name as column_name ,
+    data_type,
+    is_nullable,
+    column_default,
+    character_maximum_length,
+    numeric_precision,
+    numeric_scale,
+    constraint_type
+FROM information_schema.columns
+LEFT JOIN information_schema.key_column_usage
+    ON information_schema.columns.column_name = information_schema.key_column_usage.column_name
+    AND information_schema.columns.table_name = information_schema.key_column_usage.table_name
+    AND information_schema.columns.table_schema = information_schema.key_column_usage.table_schema
+LEFT JOIN (
+    SELECT
+        kcu.table_name,
+        kcu.column_name,
+        kcu.table_schema,
+        tc.constraint_type
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+        ON tc.constraint_name = kcu.constraint_name
+        AND tc.table_name = kcu.table_name
+        AND tc.table_schema = kcu.table_schema
+) AS keys
+    ON information_schema.columns.column_name = keys.column_name
+    AND information_schema.columns.table_name = keys.table_name
+    AND information_schema.columns.table_schema = keys.table_schema
+WHERE information_schema.columns.table_name = '$table_name'
